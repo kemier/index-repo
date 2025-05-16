@@ -1,0 +1,8 @@
+langchain>=0.1.0
+openai>=1.0.0
+libclang>=16.0.0
+dgraph-client>=21.3.2
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+typing-extensions>=4.0.0
+deepseek-ai>=0.1.0 
