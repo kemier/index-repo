@@ -1,2 +1,85 @@
-.venv
-__pycache__
+# Virtual environments and Python cache
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.env
+
+# Package management
+pip-log.txt
+pip-delete-this-directory.txt
+.uv/
+uv.lock
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# State and logs
+.analyzer_state.json
+error_traceback.txt
+*.log
+
+# Generated directories
+/temp/
+/neo4j/
+/output/
+/docs/images/
+
+# Visualization outputs
+*.png
+*.dot
+*.svg
+*.pdf
+*.gv
+*.gml
+*_graph.*
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.VSCodeCounter/
+
+# Test artefacts and generated outputs
+/test_artefacts/
+/test_scripts/output/
+
+# Downloaded executables / installers
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# External dependencies (should be installed separately)
+/folly/
+/llvm/
+
+# Jupyter notebooks (for exploration)
+*.ipynb
+.ipynb_checkpoints/
+
+# Temporary backup files
+*.bak
+*.backup
+*_old.*
+neo4j/
+
+# Compile commands database
+compile_commands.json
+
+# Test related
+folly/
+hiredis/
+/test_outputs/

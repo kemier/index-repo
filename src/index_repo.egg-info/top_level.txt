@@ -1,4 +1,0 @@
-code_analyzer
-dgraph_client
-main
-query_generator

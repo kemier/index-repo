@@ -1,8 +1,31 @@
-langchain>=0.1.0
-openai>=1.0.0
+langchain>=0.1.1
+openai>=1.10.0
 libclang>=16.0.0
-dgraph-client>=21.3.2
+neo4j>=5.13.0
 python-dotenv>=1.0.0
-pydantic>=2.0.0
-typing-extensions>=4.0.0
-deepseek-ai>=0.1.0 
+pydantic>=2.5.2
+typing-extensions>=4.8.0
+# Removed deepseek-ai as it's no longer used
+requests>=2.31.0
+matplotlib>=3.8.2
+networkx>=3.2.1
+pydot>=1.4.2
+jieba>=0.42.1
+
+# The following are not Python packages and need to be installed separately:
+# clang - Install through your system package manager
+# doxygen - Download from https://www.doxygen.nl/download.html
+
+pytest>=7.4.3
+pytest-cov>=4.1.0
+pytest-sugar>=0.9.7
+mypy>=1.7.1
+pylint>=3.0.3
+black>=23.12.0
+pre-commit>=3.5.0
+click>=8.1.7
+colorama>=0.4.6
+pytest-xdist>=3.3.1
+pynvim>=0.4.3
+clang>=16.0.0
+pyyaml>=6.0.1 

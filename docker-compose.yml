@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  neo4j:
+    image: neo4j:4.4-community
+    ports:
+      - "7475:7474" # HTTP
+      - "7688:7687" # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_dbms_allow__upgrade=true
+    volumes:
+      - ./neo4j/data:/data
+      - ./neo4j/logs:/logs
+      - ./neo4j/import:/import
+      - ./neo4j/plugins:/plugins
+    restart: unless-stopped 

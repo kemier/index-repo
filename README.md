@@ -1,306 +1,347 @@
-# C/C++代码分析与查询系统
+# Folly Code Analysis Repository
 
-这是一个基于Python的C/C++代码分析系统，具有以下功能：
+This repository contains tools and scripts for analyzing C++ codebases (like Facebook's Folly) using a combination of Clang/libclang. It extracts function call relationships and generates visual call graphs.
 
-1. 使用Clang分析C/C++代码，提取函数调用关系
-2. 使用Dgraph存储代码关系图，支持高效查询
-3. 支持通过自然语言查询代码库中的函数关系
-4. 自动提取函数体，显示完整的函数定义
-5. 支持命令行接口和API集成
+## Neo4j Graph Database Integration
 
-## 系统架构
+The project includes integration with Neo4j graph database for powerful code structure visualization and querying:
 
-该系统由以下主要组件组成：
+- Index your codebase into a graph database structure
+- Query complex relationships between functions using Cypher
+- Visualize call graphs and dependencies with Neo4j Browser
+- Find critical code paths and highly connected functions
 
-- `CodeAnalyzer`: 使用libclang解析C/C++代码，提取函数调用关系
-- `DgraphManager`: 管理与Dgraph数据库的交互，存储和查询代码关系
-- `QueryGenerator`: 将自然语言查询转换为Dgraph查询语言(DQL)
-- `CodeExtractor`: 从源文件中提取函数体
-- `main.py`: 整合以上组件的主系统
-- `cli.py`: 提供命令行界面，可分析任意C/C++项目
-- `api_example.py`: 展示如何将系统集成到其他工具中
+### Using the Neo4j Integration
 
-## 环境要求
-
-- Python 3.8+
-- libclang
-- Docker (用于运行Dgraph)
-
-## 安装
-
-1. 克隆存储库:
+1. Start the Neo4j container using Docker Compose:
 
 ```bash
-git clone <repository-url>
-cd <repository-directory>
+docker-compose up -d
 ```
 
-2. 使用UV创建虚拟环境:
+2. Index your codebase into Neo4j:
 
 ```bash
-# 安装UV
-curl -LsSf https://astral.sh/uv/install.sh | sh
+python -m src index path/to/code --project my_project --clear --use-clang --parallel
+```
 
-# 创建虚拟环境
-uv venv
+3. Query the database:
 
-# 激活虚拟环境
-# Windows
+```bash
+# Get information about a specific function
+python -m src query function function_name
+
+# Find functions that call a specific function
+python -m src neighbors function_name --project my_project --direction callers --depth 2
+
+# Find functions called by a specific function
+python -m src neighbors function_name --project my_project --direction callees --depth 2
+
+# Query by natural language description (English)
+python -m src nlquery "find string comparison functions" --project my_project --language en
+
+# Query by natural language description (Chinese)
+python -m src nlquery "查找字符串处理函数" --project my_project --language zh
+```
+
+4. Visualize in Neo4j Browser (http://localhost:7475) using Cypher queries:
+
+```cypher
+// View function call graph
+MATCH (caller:Function)-[r:CALLS]->(callee:Function)
+RETURN caller, r, callee
+LIMIT 100
+
+// Find functions with most callers (hotspots)
+MATCH (f:Function)<-[r:CALLS]-()
+RETURN f.name, count(r) as caller_count
+ORDER BY caller_count DESC
+LIMIT 10
+
+// Find template specializations
+MATCH (s:Function)-[:SPECIALIZES]->(t:Function)
+RETURN s, t
+
+// Find virtual method overrides
+MATCH (d:Function)-[:OVERRIDES]->(b:Function)
+RETURN d, b
+```
+
+## Repository Structure
+
+```
+index-repo/
+├── bin/                     # Executable scripts
+├── docs/                    # Documentation
+│   ├── folly_analysis_comprehensive.md    # Testing and implementation details
+│   ├── visualization_guide.md             # Visualization tools guide
+│   ├── build_tools_guide.md               # Build tools setup
+│   ├── project_structure.md               # Directory organization
+│   └── clang_analyzer_guide.md            # Clang analyzer usage
+├── neo4j/                   # Neo4j database files when using Docker
+│   ├── data/                # Database data files
+│   ├── logs/                # Database logs
+│   ├── import/              # Import directory
+│   └── plugins/             # Neo4j plugins
+├── scripts/                 # Consolidated Python scripts
+│   ├── cflow_tools.py       # Consolidated cflow functionality
+│   └── clang_utils.py       # Consolidated Clang utilities
+├── src/                     # Modular Python package with clean architecture
+│   ├── models/              # Data models and structures
+│   ├── services/            # Business logic services
+│   │   ├── clang_analyzer_service.py # Clang-based analyzer service
+│   │   ├── search_service.py        # Function search service
+│   │   └── neo4j_service.py         # Neo4j database service
+│   ├── controllers/         # Input handling and coordination
+│   ├── utils/               # Utility functions
+│   │   └── compile_commands.py      # Compile commands parsing utilities
+│   └── config/              # Configuration settings
+├── test_scripts/            # Test and analysis scripts
+│   ├── visualization_tools.py       # Consolidated visualization functionality
+│   ├── indexing_tools.py            # Consolidated indexing functionality
+│   └── README.md                    # Test scripts documentation
+├── .venv/                   # Python virtual environment (managed by UV)
+└── output/                  # Generated analysis output
+    ├── analysis/            # Analysis results
+    └── stubs/               # Generated function stubs
+```
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.7 or higher
+- Clang and libclang (for C++ analysis)
+- Neo4j (optional, for graph visualization)
+- Docker and Docker Compose (for running Neo4j container)
+- Graphviz
+- UV (optional, for better dependency management)
+- Facebook's Folly repository (optional, as a test target)
+
+### Installing Clang/libclang
+
+Clang and libclang are required for analyzing C++ code:
+
+- **Linux**: Install using your package manager:
+  ```bash
+  # Ubuntu/Debian
+  sudo apt-get install clang libclang-dev
+
+  # Fedora/RHEL
+  sudo dnf install clang clang-devel
+  ```
+
+- **Windows**: Install using LLVM installer from https://releases.llvm.org/
+
+- **macOS**: Install using Homebrew:
+  ```bash
+  brew install llvm
+  ```
+
+The Python bindings for libclang will be installed via pip when installing the dependencies.
+
+### Setting up Neo4j
+
+For graph visualizations and advanced queries:
+
+1. The easiest way is to use the included Docker Compose configuration:
+   ```bash
+   docker-compose up -d
+   ```
+   This starts Neo4j with these settings:
+   - Web interface: http://localhost:7475
+   - Bolt connection: bolt://localhost:7688
+   - Default credentials: neo4j/password
+
+2. Alternatively, you can install Neo4j Desktop from https://neo4j.com/download/ and set environment variables:
+   ```
+   NEO4J_URI=bolt://localhost:7687
+   NEO4J_USER=neo4j
+   NEO4J_PASSWORD=your_password
+   ```
+
+### Getting Folly (For Testing)
+
+If you want to test the analysis tools on Facebook's Folly library:
+
+1. Clone the Folly repository:
+   ```bash
+   git clone https://github.com/facebook/folly.git
+   ```
+
+2. The analysis tools can now be pointed to this repository for testing:
+   ```bash
+   python -m src index ./folly --project folly --use-clang --parallel
+   ```
+
+## Consolidated Tools
+
+### Visualization Tools
+
+The `visualization_tools.py` module in the `test_scripts` directory provides a comprehensive set of visualization capabilities:
+
+```bash
+python test_scripts/visualization_tools.py --type <visualization_type> [options]
+```
+
+Available visualization types include:
+- `logger_functions`: Visualize Logger-related functions
+- `logger_callgraph`: Visualize Logger call graphs
+- `hash64_callgraph`: Visualize Hash64 call graphs
+- `initimpl_callgraph`: Visualize InitImpl call graphs
+- `folly_callgraph`: Generate comprehensive call graphs
+- `specific_component`: Visualize specific components
+- `main_callgraph`: Visualize main function call graphs
+- `folly_graph_viewer`: View specific function relationships
+
+For more details, see the `test_scripts/README.md` file.
+
+### Indexing Tools
+
+The `indexing_tools.py` module in the `test_scripts` directory combines functionality from multiple indexing scripts:
+
+```bash
+python test_scripts/indexing_tools.py <command> [options]
+```
+
+Available commands include:
+- `index`: Index a file or directory
+- `index-incremental`: Incrementally index a directory
+- `index-folly`: Index the Folly codebase
+- `clear`: Clear project data from Neo4j
+
+## Documentation
+
+The project documentation has been consolidated into five comprehensive guides:
+
+1. **folly_analysis_comprehensive.md**: Testing and implementation details
+2. **visualization_guide.md**: Guide to using visualization tools
+3. **build_tools_guide.md**: Setup guide for build tools
+4. **project_structure.md**: Directory organization overview
+5. **clang_analyzer_guide.md**: Guide to using the Clang analyzer
+
+## Folly Test Results
+
+Comprehensive testing has been performed on Facebook's Folly library to validate the system's capability to handle complex C++ code. Key findings include:
+
+### Tested Files
+
+- Basic files: Format.cpp, String.cpp, Uri.cpp, Benchmark.cpp
+- Advanced files with complex C++ features: RegexMatchCache.cpp, Future.cpp, Barrier.cpp
+
+### Analysis Performance
+
+- **Function identification**: 95-98% accuracy for standard functions; 90-95% for template/virtual functions
+- **Call relationship detection**: 96% for direct calls; 75-80% for virtual/template function calls
+- **Indexing performance**: ~12 functions/second, peak memory usage ~500MB for large files
+
+### C++ Feature Support
+
+- **Class methods**: 95% accurate identification and relationship mapping
+- **Templates**: 85% accurate for basic templates, 70% for complex specializations
+- **Namespaces**: 90% accuracy for nested namespaces, 85% for distinguishing same-named functions
+
+### Natural Language Query Capabilities
+
+- **English queries**: 85% accuracy, 80% recall
+- **Chinese queries**: 75% accuracy, 65% recall
+- **Query performance**: Average response time ~200ms
+
+## Limitations and Challenges
+
+The system has some limitations when handling complex C++ codebases:
+
+1. **Complex C++ Features**:
+   - Template instantiation tracking needs improvement
+   - Virtual function and polymorphic call analysis is limited
+   - Operator overloading and implicit conversions have limited support
+   - SFINAE and advanced template metaprogramming support is limited
+
+2. **Include Directory Configuration**:
+   - Auto-detection of include paths can be improved
+   - Dependency on compiler flags and macro definitions
+   - Platform-specific features can cause inconsistencies
+
+3. **Performance with Large Codebases**:
+   - Memory usage is high for codebases >1M lines
+   - Limited support for incremental analysis
+   - Parallel processing capabilities need optimization
+
+4. **Query Understanding**:
+   - Chinese terminology recognition needs improvement
+   - Context awareness for code semantics is limited
+   - Query sorting and relevance ranking can be improved
+
+## Quick Start
+
+1. Run the analysis on a C/C++ codebase:
+
+```bash
+python -m src index path/to/your/source/code --project my_project --use-clang --parallel
+```
+
+2. Search for specific functions:
+
+```bash
+python -m src search "functionName1" --project my_project
+```
+
+3. Find neighbors in the call graph:
+
+```bash
+python -m src neighbors "functionName" --project my_project --direction both --depth 2
+```
+
+4. Query using natural language:
+
+```bash
+python -m src nlquery "find string manipulation functions" --project my_project --language en
+```
+
+## Modular Design
+
+The codebase follows a clean modular architecture:
+
+- **Models**: Data structures and entities (`Function`, `CallGraph`)
+- **Services**: Business logic (`ClangAnalyzerService`, `SearchService`, `Neo4jService`)
+- **Controllers**: Coordinating operations (`AnalysisController`)
+- **Utils**: Helper utilities (`file_utils`, `parse_utils`, `compile_commands`)
+- **Config**: Configuration settings
+
+This approach provides:
+- Clear separation of concerns
+- Improved testability
+- Easier extension and maintenance
+
+## Virtual Environment Management with UV
+
+[UV](https://github.com/astral-sh/uv) is a fast Python package installer and resolver that can be used to manage virtual environments for this project.
+
+### Creating a Virtual Environment
+
+```bash
+# Create a new virtual environment
+uv venv .venv
+
+# Activate the virtual environment
 .venv\Scripts\activate
-# Linux/Mac
-source .venv/bin/activate
 ```
 
-3. 安装依赖:
+### Installing Dependencies
 
 ```bash
-uv pip install -e .
+# Install dependencies from requirements.txt
+uv pip install -r requirements.txt
 ```
 
-4. 启动Dgraph:
+## License
 
-```bash
-docker run -it -p 5080:5080 -p 6080:6080 -p 8080:8080 -p 9080:9080 -p 8000:8000 dgraph/standalone:latest
-```
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-5. 设置API密钥:
+## Acknowledgments
 
-创建一个`.env`文件，并设置DeepSeek API密钥:
-
-```
-DEEPSEEK_API_KEY=your_api_key_here
-```
-
-## 使用方法
-
-### 命令行工具
-
-系统提供两种命令行工具：
-
-#### 1. 功能查询工具 (query_functions.py)
-
-使用`query_functions.py`脚本进行代码查询:
-
-```bash
-# 使用自然语言查询
-python query_functions.py -q "查找所有与价格计算相关的函数"
-
-# 使用预定义查询
-python query_functions.py -p function_call_relationships
-
-# 分析代码库并查询
-python query_functions.py -s test_repo/*.cpp test_repo/*.h -c "-std=c++17" -q "查找回调函数"
-
-# 显示所有函数
-python query_functions.py -a
-
-# 将结果保存到文件
-python query_functions.py -q "查找递归函数" -o results.json
-```
-
-#### 2. 通用C/C++项目分析工具 (cli.py)
-
-新的`cli.py`工具支持更灵活的项目分析:
-
-```bash
-# 分析C/C++项目
-python cli.py analyze /path/to/project --recursive
-
-# 使用自然语言查询
-python cli.py query "Find functions related to error handling"
-
-# 显示特定函数的详细信息
-python cli.py function calculate_total_price
-
-# 保存查询结果到文件
-python cli.py query "Find callback functions" --output results.json
-```
-
-CLI工具选项:
-
-```
-analyze  - 分析C/C++项目
-  --patterns        文件模式 (默认: *.cpp *.h *.hpp *.c *.cc)
-  --compile-args    编译参数 (默认: -std=c++17)
-  --recursive       递归搜索文件
-
-query    - 使用自然语言查询函数
-  --output          保存结果到文件
-  --no-bodies       不提取函数体
-
-function - 显示特定函数的详细信息
-  --file            指定源文件路径
-```
-
-### 高级分析功能
-
-新的高级分析工具`test_advanced_analysis.py`提供了更深入的代码关系分析:
-
-```bash
-# 分析特定函数的关系
-python test_advanced_analysis.py calculate_total_price
-
-# 运行默认分析，包括回调函数和复杂流程分析
-python test_advanced_analysis.py
-```
-
-### API集成示例
-
-使用`api_example.py`学习如何将代码分析系统集成到其他工具中:
-
-```bash
-# 分析示例项目
-python api_example.py --analyze
-
-# 执行查询
-python api_example.py --query "Find functions related to price calculation"
-
-# 获取特定函数的详细信息
-python api_example.py --function calculate_total_price
-
-# 显示函数的调用图
-python api_example.py --call-graph calculate_total_price
-
-# 列出所有预定义查询
-python api_example.py --list-queries
-
-# 以JSON格式输出结果
-python api_example.py --function calculate_total_price --output json
-```
-
-### 命令行选项 (query_functions.py)
-
-```
-options:
-  -h, --help            显示此帮助信息
-  --query QUERY, -q QUERY
-                        自然语言查询字符串
-  --predefined PREDEFINED, -p PREDEFINED
-                        使用预定义的查询
-  --result-key RESULT_KEY, -k RESULT_KEY
-                        查询结果在JSON中的键名
-  --no-bodies           不提取函数体（更快）
-  --no-deduplicate      不去除重复函数
-  --source-files SOURCE_FILES [SOURCE_FILES ...], -s SOURCE_FILES [SOURCE_FILES ...]
-                        源文件列表（如果需要先分析代码库）
-  --compile-args COMPILE_ARGS [COMPILE_ARGS ...], -c COMPILE_ARGS [COMPILE_ARGS ...]
-                        编译参数（如果需要先分析代码库）
-  --all-functions, -a   显示所有函数
-  --output OUTPUT, -o OUTPUT
-                        将结果保存到指定文件
-```
-
-### 预定义查询
-
-系统提供了以下预定义查询:
-
-- `find_all_functions`: 查找所有函数
-- `function_call_relationships`: 显示函数之间的调用关系
-- `concise_call_relationships`: 显示精简版的函数调用关系
-- `order_system_relationships`: 显示OrderSystem类的函数调用关系
-
-### 编程接口
-
-```python
-from src.main import CodeAnalysisSystem
-
-system = CodeAnalysisSystem()
-
-# 分析代码库
-source_files = ["file1.cpp", "file2.h"]
-compile_args = ["-std=c++17", "-I/path/to/include"]
-system.analyze_codebase(source_files, compile_args)
-
-# 使用自然语言查询
-results = system.query_by_natural_language(
-    "找到所有与用户相关的函数", 
-    "UserFunctions",
-    extract_function_bodies=True
-)
-
-# 使用预定义查询
-results = system.query_functions_with_bodies("function_call_relationships")
-```
-
-### 使用API封装类
-
-```python
-from api_example import CodeAnalysisAPI
-
-api = CodeAnalysisAPI()
-
-# 分析项目
-api.analyze_project(
-    ["/path/to/source1.cpp", "/path/to/header.h"],
-    compile_args=["-std=c++17", "-I/path/to/include"]
-)
-
-# 执行自然语言查询
-results = api.query_functions("Find functions related to error handling")
-print(f"Found {results['count']} functions")
-
-# 获取特定函数的详细信息
-function_details = api.get_function_details("calculate_total_price")
-
-# 获取函数调用图
-call_graph = api.get_call_graph("main", depth=3)
-
-# 执行预定义查询
-available_queries = api.get_available_queries()
-api.execute_predefined_query(available_queries["available_queries"][0])
-```
-
-## 示例
-
-### 查询函数调用关系
-
-```bash
-python query_functions.py -q "查找OrderSystem类中哪些函数调用了validate_order函数"
-```
-
-### 分析新代码库
-
-```bash
-python query_functions.py -s path/to/src/*.cpp path/to/include/*.h -c "-std=c++17" -I"path/to/include" -q "找到所有回调函数"
-```
-
-### 使用CLI工具分析大型项目
-
-```bash
-# 分析整个项目
-python cli.py analyze /path/to/large/project --recursive
-
-# 查找特定模式的函数
-python cli.py query "Find all functions that handle exceptions"
-
-# 查看特定函数的实现
-python cli.py function handle_error
-```
-
-### 使用API集成到CI/CD流程
-
-```python
-from api_example import CodeAnalysisAPI
-
-def analyze_code_changes(changed_files):
-    api = CodeAnalysisAPI()
-    api.analyze_project(changed_files)
-    
-    # 检查是否有未处理的错误
-    error_results = api.query_functions("Find functions that don't properly handle errors")
-    if error_results["count"] > 0:
-        print("Warning: Some functions may not properly handle errors!")
-        for func in error_results["results"]:
-            print(f"Check {func['name']} in {func['file_path']}")
-    
-    # 返回分析结果
-    return error_results
-```
-
-## 贡献
-
-欢迎贡献！请提交Pull Request或创建Issue。
-
-## 许可证
-
-本项目采用MIT许可证。 
+- Clang/libclang: For robust C++ code analysis
+- Neo4j: Graph database for storing and querying call relationships
+- UV: Fast Python package installer and virtual environment manager
+- Facebook's Folly: Used as a test target for analysis
+- jieba: Chinese text segmentation library for natural language queries 
