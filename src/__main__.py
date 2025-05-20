@@ -52,6 +52,14 @@ def parse_args():
     nl_query_parser.add_argument("--limit", type=int, default=10, help="Maximum number of results to return")
     nl_query_parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed match information")
     
+    # Embedding index command
+    embedding_index_parser = subparsers.add_parser("embedding-index", help="Build embedding-based code index")
+    embedding_index_parser.add_argument("--project-dir", required=True, help="Project directory to index")
+
+    embedding_search_parser = subparsers.add_parser("embedding-search", help="Semantic search in code index")
+    embedding_search_parser.add_argument("--project-dir", required=True, help="Project directory to search")
+    embedding_search_parser.add_argument("--query", required=True, help="Query text")
+    
     return parser.parse_args()
 
 
@@ -186,6 +194,22 @@ def main():
         except Exception as e:
             print(f"Error during natural language query: {e}")
             sys.exit(1)
+
+    elif args.command == "embedding-index":
+        from src.services.embedding_index_service import EmbeddingIndexService
+        service = EmbeddingIndexService(args.project_dir)
+        service.build_index()
+        print("Embedding index built.")
+
+    elif args.command == "embedding-search":
+        from src.services.embedding_index_service import EmbeddingIndexService
+        service = EmbeddingIndexService(args.project_dir)
+        service.build_index()
+        results = service.search(args.query)
+        for meta, score in results:
+            print(f"{meta['file']}:{meta['start_line']}-{meta['end_line']} | {meta['name']} | Score: {score}")
+            print(meta['code'])
+            print('-' * 40)
 
 
 if __name__ == "__main__":
