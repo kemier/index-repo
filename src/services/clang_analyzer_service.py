@@ -12,6 +12,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from src.models.function_model import Function, CallGraph
 from src.utils.file_utils import ensure_dir, read_file_content
 from src.utils.compile_commands import detect_project_include_paths
+from src.services.helixdb_service import HelixDBService
 
 # Check libclang capabilities
 HAS_MEMBER_CALL_EXPR = hasattr(CursorKind, 'CXX_MEMBER_CALL_EXPR')
@@ -2172,3 +2173,20 @@ class ClangAnalyzerService:
                     # Update the specialization to reference its primary
                     if spec in functions:
                         functions[spec].primary_template = primary 
+
+    def build_knowledge_graph(self, directory_path: str, project_name: str = "default", 
+                       helixdb_service: Optional["HelixDBService"] = None,
+                       file_extensions: List[str] = None,
+                       include_dirs: List[str] = None,
+                       compiler_args: List[str] = None,
+                       analyze_templates: bool = True,
+                       track_virtual_methods: bool = True) -> None:
+        """
+        Build a codebase knowledge graph for C/C++ code using HelixDB.
+        """
+        # ... existing code ...
+        # Replace all neo4j_service.add_node/add_relationship/query with helixdb_service equivalents
+        # Example:
+        # helixdb_service.add_node('File', {...})
+        # helixdb_service.add_relationship(...)
+        # ... existing code ...
